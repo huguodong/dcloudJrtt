@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+		<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+		<link rel="stylesheet" href="css/mui.css" />
+		<script type="text/javascript" src="js/mui.js"></script>
+		<style>
+			#content img {
+				width: 100%;
+			}
+			
+			#content {
+				line-height: 2em;
+				padding: 10px;
+			}
+			
+			#share {
+				position: fixed;
+				z-index: 5;
+				width: 30px;
+				height: 30px;
+				right: 10px;
+				bottom: 10px;
+				background: #FFFFFF;
+				border-radius: 50%;
+				line-height: 30px;
+				text-align: center;
+			}
+		</style>
+	</head>
+
+	<body>
+		<header class="mui-bar mui-bar-nav">
+			<a class="mui-action-back mui-icon mui-icon-left-nav mui-pull-left"></a>
+			<h1 id="title" class="mui-title"></h1>
+		</header>
+		<div class="mui-content">
+			<div id="content"></div>
+		</div>
+		<div id="share"><span class="mui-icon mui-icon-redo"></span></div>
+		<script type="text/javascript" src="js/hui.js"></script>
+		<script>
+			var self;
+			var news;
+			mui.init();
+			mui.plusReady(function() {
+				plus.webview.currentWebview().setStyle({
+					scrollIndicator: 'none',
+				});
+				self = plus.webview.currentWebview();
+				hui.getJSON(
+					'http://hoa.hcoder.net/index.php?user=hcoder&pwd=hcoder&m=info&id=' + self.newsid,
+					function(data) {
+						news = data;
+						hui('#title').html(data.title);
+						hui('#content').html(data.content);
+					},
+					function() {
+						mui.toast("新闻加载失败");
+					}
+
+				)
+			})
+			hui('#share').click(function() {
+				var actionbuttons = [{
+					title: "微信好友"
+				}, {
+					title: "QQ好友"
+				}, {
+					title: "朋友圈"
+				}];
+				var actionstyle = {
+					title: "请选择分享类型",
+					cancel: "取消",
+					buttons: actionbuttons
+				};
+				var wxshare;
+				var qqshare;
+				plus.nativeUI.actionSheet(actionstyle, function(e) {
+					//微信分享
+					if(e.index == 1 || e.index == 3) {
+						
+						plus.share.getServices(function(s) {
+							for(var k in s) {
+								if(s[k].id == 'weixin') {
+									wxshare = s[k];
+								}
+							}
+							if(wxshare) {
+								if(e.index == 1) {
+									var msg = {
+										'title': news.title,
+										content: '',
+										href: "http://www.hcoder.net",
+										thumbs: ['/img/share.png'],
+										extra: {
+											scene: "WXSceneSession"
+										}
+									};
+								} else {
+									var msg = {
+										'title': news.title,
+										content: '',
+										href: "http://www.hcoder.net",
+										thumbs: ['/img/share.png'],
+										extra: {
+											scene: "WXSceneTimeline"
+										}
+									};
+								}
+								wxshare.send(msg, function() {
+									mui.toast("分享成功！")
+								}, function(e) {
+									//分享失败函数
+									mui.toast(e.message)
+								});
+							}
+						}, function(e) {
+							mui.toast("并没有安装微信！")
+						})
+					}
+					//qq分享
+					else if(e.index == 2) {
+						plus.share.getServices(function(s) {
+								for(var k in s) {
+									if(s[k].id == 'qq') {
+										qqshare = s[k];
+									}
+								}
+								if(qqshare) {
+									var msg = {
+										'title': news.title,
+										content: '这是我分享的内容',
+										href: "http://www.hcoder.net",
+										thumbs: ['/img/share.png'],
+									};
+									qqshare.send(msg, function() {
+										mui.toast("分享成功！")
+									}, function(e) {
+										//分享失败函数
+										mui.toast(e.message)
+									});
+								}
+							},
+							function(e) {
+								mui.toast("打开qq失败！")
+							})
+					}
+				})
+			})
+		</script>
+	</body>
+
+</html>

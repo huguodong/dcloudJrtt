@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+		<title></title>
+		<link rel="stylesheet" href="css/mui.css" /><br />
+		<style>
+			/*html,
+			body {
+				background-color: #efeff4;
+			}*/
+			
+			.mui-bar~.mui-content .mui-fullscreen {
+				top: 44px;
+				height: auto;
+			}
+			
+			.mui-pull-top-tips {
+				position: absolute;
+				top: -60px;
+				left: 50%;
+				margin-left: -25px;
+				width: 40px;
+				height: 40px;
+				border-radius: 100%;
+				z-index: 1;
+			}
+			
+			.mui-bar~.mui-pull-top-tips {
+				top: 24px;
+			}
+			
+			.mui-pull-top-wrapper {
+				width: 42px;
+				height: 42px;
+				display: block;
+				text-align: center;
+				background-color: #efeff4;
+				border: 1px solid #ddd;
+				border-radius: 25px;
+				background-clip: padding-box;
+				box-shadow: 0 4px 10px #bbb;
+				overflow: hidden;
+			}
+			
+			.mui-pull-top-tips.mui-transitioning {
+				-webkit-transition-duration: 200ms;
+				transition-duration: 200ms;
+			}
+			
+			.mui-pull-top-tips .mui-pull-loading {
+				-webkit-backface-visibility: hidden;
+				-webkit-transition-duration: 400ms;
+				transition-duration: 400ms;
+				margin: 0;
+			}
+			
+			.mui-pull-top-wrapper .mui-icon,
+			.mui-pull-top-wrapper .mui-spinner {
+				margin-top: 7px;
+			}
+			
+			.mui-pull-top-wrapper .mui-icon.mui-reverse {}
+			
+			.mui-pull-bottom-tips {
+				text-align: center;
+				background-color: #efeff4;
+				font-size: 15px;
+				line-height: 40px;
+				color: #777;
+			}
+			
+			.mui-pull-top-canvas {
+				overflow: hidden;
+				background-color: #fafafa;
+				border-radius: 40px;
+				box-shadow: 0 4px 10px #bbb;
+				width: 40px;
+				height: 40px;
+				margin: 0 auto;
+			}
+			
+			.mui-pull-top-canvas canvas {
+				width: 40px;
+			}
+			
+			.mui-slider-indicator.mui-segmented-control {
+				background-color: #efeff4;
+			}
+		</style>
+	</head>
+
+	<body>
+		<div id="slider" class="mui-slider mui-fullscreen">
+			<!--<div class="mui-slider-group">-->
+			<div id="scroll1" class="mui-scroll-wrapper">
+				<div class="mui-scroll">
+					<ul id="newsList" class="mui-table-view">
+
+					</ul>
+				</div>
+			</div>
+			<!--</div>-->
+		</div>
+
+		<script type="text/javascript" src="js/mui.min.js"></script>
+		<script type="text/javascript" src="js/hui.js"></script>
+		<script type="text/javascript" src="js/mui.pullToRefresh.js"></script>
+		<script type="text/javascript" src="js/mui.pullToRefresh.material.js"></script>
+		<script type="text/javascript" src="js/mui.lazyload.js"></script>
+		<script type="text/javascript" src="js/mui.lazyload.img.js"></script>
+		<script type="text/javascript" src="js/lazy-load-img.min.js"></script>
+		<script>
+			var page = 1;
+			cate = 0;
+			var up;
+			
+			//利用hui监听返回键防止子窗口返回
+			hui.Back = function() {
+				var parentView = plus.webview.currentWebview().parent();
+				parentView.evalJS('hui.Back();');
+			}
+			mui.init();
+			
+			//设置a标签href可触发
+			mui('#newsList').on('tap', 'a', function() {
+				document.location.href = this.href;
+			})
+			//懒加载
+			var lazyLoadImg = new LazyLoadImg({
+				el: document.querySelector('#newsList'),
+				mode: 'default', //默认模式，将显示原图，diy模式，将自定义剪切，默认剪切居中部分
+				time: 300, // 设置一个检测时间间隔
+				complete: false, //页面内所有数据图片加载完成后，是否自己销毁程序，true默认销毁，false不销毁
+				position: { // 只要其中一个位置符合条件，都会触发加载机制
+					top: 0, // 元素距离顶部
+					right: 0, // 元素距离右边
+					bottom: 0, // 元素距离下面
+					left: 0 // 元素距离左边
+				},
+				before: function() {
+
+				},
+				success: function(el) {
+					el.classList.add('success')
+				},
+				error: function(el) {
+					el.src = '/images/lazy.png'
+				}
+			});
+
+			//初始化
+			(function($) {
+				var deceleration = mui.os.ios ? 0.003 : 0.0009;
+				$('.mui-scroll-wrapper').scroll({
+					bounce: false,
+					indicators: false, //是否显示滚动条
+					deceleration: deceleration
+				});
+				$.ready(function() {
+					//循环初始化所有下拉刷新，上拉加载。
+					$.each(document.querySelectorAll('.mui-scroll'), function(index, pullRefreshEl) {
+						$(pullRefreshEl).pullToRefresh({
+							down: {
+								callback: function() {
+									var self = this;
+									getNewsList(); //获取数据
+
+									setTimeout(function() {
+										self.endPullDownToRefresh(); //关闭刷新动画，延迟一秒
+									}, 1000);
+
+								}
+							},
+							up: {
+								callback: function() {
+									loadMore(this); //加载更多
+								}
+							}
+						});
+					});
+				});
+			})(mui);
+			mui.plusReady(function() {
+				getNewsList();
+			});
+			//切换分类
+			function changeCate(cateid) {
+				//				hui.centerLoading();
+				page = 1;
+				cate = cateid;
+				mui('.mui-scroll-wrapper').scroll().scrollTo(0, 0, 100); //100毫秒滚动到顶
+				if(up != null) {
+					up.refresh(true);
+				}
+				getNewsList();
+			}
+
+			//获取数据列表
+			function getNewsList() {
+				page = 1;
+				datahtml = "";
+				//请求数据源
+				mui.ajax(
+					'http://hoa.hcoder.net/index.php?user=hcoder&pwd=hcoder&m=mediaList&page=' + page + '&cate=' + cate, {
+						type: 'get',
+						//						dataType: 'json', //服务器返回json格式数据
+						timeout: 1000, //超时时间设置为10秒；
+						//成功之后
+						success: function(data) {
+							var arrItem = data.split("--hcSplitor--");
+							for(var i = 0; i < arrItem.length; i++) {
+								var item = arrItem[i].split("--hcListSplitor--");
+								datahtml += '<li class="mui-table-view-cell mui-media">' +
+									'<a href="javascript:newDetail(' + item[0] + ')">' +
+									'<img class="hui-lazy mui-media-object mui-pull-left " src="img/lazy.png"  data-src="' + item[1] + '">' +
+									'<div class="mui-media-body">' +
+									item[2] +
+									'<p class="mui-ellipsis">' +
+									item[3] +
+									'</p>' +
+									'</div>' +
+									'</a>' +
+									'</li>';
+							}
+							document.getElementById("newsList").innerHTML = datahtml;
+							page++;
+							if(up != null) {
+								up.refresh(true);
+							}
+							lazyLoadImg.start(); // 重新开启懒加载程序
+						},
+						error: function(e) {
+							setTimeout(function() {
+
+							}, 1000);
+							mui.toast("请求数据失败！")
+						},
+					}
+				);
+			}
+
+			//加载更多
+			function loadMore(pullup) {
+				up = pullup;
+				datahtml = "";
+				hui.get('http://hoa.hcoder.net/index.php?user=hcoder&pwd=hcoder&m=mediaList&page=' + page + '&cate=' + cate,
+					function(data) {
+						if(data == "null") {
+							pullup.endPullUpToRefresh(true);
+							return;
+						}
+						var arrItem = data.split("--hcSplitor--");
+						for(var i = 0; i < arrItem.length; i++) {
+							var item = arrItem[i].split("--hcListSplitor--");
+							datahtml += '<li class="mui-table-view-cell mui-media">' +
+								'<a href="javascript:newDetail(' + item[0] + ')">' +
+								'<img class="hui-lazy mui-media-object mui-pull-left " src="img/lazy.png" data-src="' + item[1] + '">' +
+								'<div class="mui-media-body">' +
+								item[2] +
+								'<p class="mui-ellipsis">' +
+								item[3] +
+								'</p>' +
+								'</div>' +
+								'</a>' +
+								'</li>';
+						}
+						var li = document.createElement('li');
+						li.innerHTML = datahtml;
+						hui(li).appendTo('#newsList');
+						setTimeout(function() {
+							pullup.endPullUpToRefresh();
+						}, 1000);
+						page++;
+						//						lazyLoad.addElements();
+					},
+					function(e) {
+						mui.toast("数据加载失败");
+					})
+			}
+
+			function newDetail(id) {
+				mui.openWindow({
+					url: 'info.html',
+					id: 'info',
+					waiting: {
+						autoShow: false,
+					},
+					extras: {
+						newsid: id,
+					},
+				})
+			}
+		</script>
+	</body>
+
+</html>

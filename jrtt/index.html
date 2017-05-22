@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+		<title></title>
+
+		<link href="css/mui.css" rel="stylesheet" />
+		<style>
+			* {
+				margin: 0px;
+				padding: 0px;
+				font-size: 15px;
+				color: #000000;
+				outline: none;
+			}
+			
+			body {
+				background: #FFFFFF;
+			}
+			
+			div {
+				overflow: hidden;
+			}
+			
+			a {
+				text-decoration: none;
+				color: #000000;
+			}
+			
+			a:hover {
+				text-decoration: underline;
+			}
+			
+			img {
+				border: none;
+			}
+			
+			#header {
+				width: 100%;
+				height: 46px;
+				background: #D43D3D;
+			}
+			
+			#topSearch {
+				width: 60%;
+				height: 30px;
+				background: #F6F5F4;
+				border-radius: 3px;
+				float: right;
+				margin: 7px 8px 0px 0px;
+				line-height: 30px;
+				color: #999999;
+				text-align: left;
+				text-indent: 15px;
+				font-size: 14px;
+			}
+			
+			#topCate a {
+				/*display: block;
+				float: left;
+				height: 40px;
+				line-height: 40px;
+				width: 15%;
+				text-align: center;*/
+				/*float: left;*/
+				/*width: 15%;*/
+				padding-left: 10px;
+				padding-right: 8px;
+				text-decoration: none;
+			}
+			
+			.topCateSed {
+				color: #D43D3D;
+				font-size: 17px !important;
+			}
+		</style>
+	</head>
+
+	<body>
+		<header class="mui-bar mui-bar-nav">
+			<div style="float: left;"><img src="img/logo.png" width="100" /></div>
+			<div id="topSearch"><span class="mui-icon mui-icon-search" style="padding-left: 0px;padding-top:5px;float: left;"></span>搜您想搜的</div>
+		</header>
+		<div class="mui-content">
+			<div class="mui-scroll-wrapper mui-slider-indicator mui-segmented-control mui-segmented-control-inverted">
+				<div id="topCate" class="mui-scroll">
+					<a id="0" class="mui-control-item mui-active">推荐</a>
+					<a id="1" class="mui-control-item">热点</a>
+					<a id="2" class="mui-control-item">视频</a>
+					<a id="3" class="mui-control-item">本地</a>
+					<a id="4" class="mui-control-item">社会</a>
+					<a id="5" class="mui-control-item">娱乐</a>
+					<a id="6" class="mui-control-item">问答</a>
+					<a id="7" class="mui-control-item">汽车</a>
+					<a id="8" class="mui-control-item">体育</a>
+				</div>
+			</div>
+		</div>
+		<script src="js/mui.min.js"></script>
+		<script type="text/javascript" src="js/hui.js"></script>
+		<script type="text/javascript" charset="utf-8">
+			var myappVer = '1.0';
+			mui.init({
+				subpages: [{
+					url: "indexSub.html", //子页面HTML地址，支持本地地址和网络地址
+					id: "indexSub", //子页面标志
+					styles: {
+						top: "82px",
+						bottom: "0px",
+						scrollIndicator: "none"
+					},
+				}]
+			});
+			//			mui.init();
+			mui.plusReady(function() {
+				//设置沉浸式状态栏颜色
+				plus.navigator.setStatusBarBackground('#D43D3D');
+				mui('.mui-scroll').on('tap', 'a', function() {
+					var id = this.getAttribute('id');
+					subview = plus.webview.getWebviewById('indexSub');
+					subview.evalJS('changeCate(' + id + ')');
+				})
+
+				//版本检查
+				checkVersion();
+			});
+
+			function checkVersion() {
+				hui.getJSON(
+					'http://hoa.hcoder.net/index.php?user=hcoder&pwd=hcoder&m=ver',
+					function(data) {
+						if(myappVer != data.v) {
+							var btnArray = ['我不要', '好的'];
+							mui.confirm("发现新的版本，是否立即更新？", "发现新版本", btnArray, function(e) {
+								if(e.index == 1) {
+									mui.toast("点了更新！")
+									return;
+								} 
+							});
+
+						}else{
+							mui.toast("x！")
+						}
+					}
+				);
+			}
+			//			hui('#topSearch').click(function() {
+			//				
+			//			})
+		</script>
+	</body>
+
+</html>
